@@ -21,4 +21,30 @@ biggest price differences.
 
 ## How to
 
+    # Get available spiders
     $ scrapy list
+    amazonau-musiccds
+    atlantismusic-musiccds
+    sanity-musiccds
+
+    # Run individual spider
+    $ scrapy crawl amazonau-musiccds -o results/amazonau-musiccds.jl
+
+    # Run all spiders in parallel
+    $ python -m scrapyexperiments.scripts crawl results
+
+    # Analyse scraped data
+    $ python -m scrapyexperiments.scripts analyse results
+
+
+## TODO
+
+* Make scrapers more parallel
+    * Sanity.com.au gives links to the following 4 pages on every 5th
+      page, plus a link to the next set of 5 - schedule all 5 at once
+    * Amazon only links to the next page, but the page is a simple GET
+      parameter, and we're told how many pages there are total, so we
+      could schedule a bunch at once, perhaps even all of them as soon
+      as we get the first response?
+    * AtlantisMusic is similar to Amazon.
+

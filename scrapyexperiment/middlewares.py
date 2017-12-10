@@ -4,6 +4,7 @@
 #
 # See documentation in:
 # http://doc.scrapy.org/en/latest/topics/spider-middleware.html
+from random import choice
 
 from scrapy import signals
 
@@ -54,3 +55,54 @@ class ScrapyexperimentSpiderMiddleware(object):
 
     def spider_opened(self, spider):
         spider.logger.info("Spider opened: %s" % spider.name)
+
+
+class RandomUserAgentDownloaderMiddleware:
+
+    # Breaking PEP8 here because the alternative is worse
+    DEFAULT_USER_AGENTS = (
+        # Chrome 62 - Windows 7, Windows 10, Linux, OS X High Sierra
+        "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.94 Safari/537.36",
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.94 Safari/537.36",
+        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.94 Safari/537.36",
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.94 Safari/537.36",
+
+        # Firefox 57 - Windows 7, Windows 10, Linux, OS X High Sierra
+        "Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:57.0) Gecko/20100101 Firefox/57.0",
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:57.0) Gecko/20100101 Firefox/57.0",
+        "Mozilla/5.0 (X11; Linux x86_64; rv:57.0) Gecko/20100101 Firefox/57.0",
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.13; rv:57.0) Gecko/20100101 Firefox/57.0",
+
+        # Internet Explorer 11 - Windows 7, Windows 10, Windows 10 Tablet,
+        "Mozilla/5.0 (Windows NT 6.1; WOW64; Trident/7.0; rv:11.0) like Gecko",
+        "Mozilla/5.0 (Windows NT 10.0; WOW64; Trident/7.0; rv:11.0) like Gecko",
+        "Mozilla/5.0 (Windows NT 10.0; WOW64; Trident/7.0; Touch; rv:11.0) like Gecko",
+
+        # Edge 16 - Windows 10
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36 Edge/16.16299",
+
+        # Safari - OS X High Sierra
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_1) AppleWebKit/604.3.5 (KHTML, like Gecko) Version/11.0.1 Safari/604.3.5",
+    )
+
+    def __init__(self, user_agents=None):
+        self.user_agents = user_agents or list(self.DEFAULT_USER_AGENTS)
+        self.enabled = True
+
+    @classmethod
+    def from_crawler(cls, crawler):
+        middleware = cls(
+            user_agents=crawler.settings.getlist("RANDOM_USER_AGENTS"),
+        )
+        crawler.signals.connect(
+            middleware.spider_opened,
+            signal=signals.spider_opened,
+        )
+        return middleware
+
+    def spider_opened(self, spider):
+        self.enabled = getattr(spider, "use_random_user_agent", True)
+
+    def process_request(self, request, spider):
+        if self.enabled:
+            request.headers.setdefault("User-Agent", choice(self.user_agents))

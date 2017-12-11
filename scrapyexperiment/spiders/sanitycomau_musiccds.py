@@ -1,4 +1,5 @@
 # coding=utf-8
+import re
 import scrapy
 
 from scrapyexperiment.items import MusicCDItem
@@ -7,7 +8,6 @@ from scrapyexperiment.items import MusicCDItem
 class SanityMusicCDsSpider(scrapy.Spider):
     name = "sanity-musiccds"
     allowed_domains = ["sanity.com.au"]
-    start_urls = ["http://sanity.com.au/"]
 
     def start_requests(self):
         return [
@@ -33,7 +33,15 @@ class SanityMusicCDsSpider(scrapy.Spider):
             item = result.css(".thumb-text div ::text").extract()
             try:
                 cd["title"] = item[0]
-                cd["artist"] = item[1]
+                artist = item[1]
+                # Sometimes the artist is missing, and the next item is the
+                # release date, so check this doesn't look date-y.
+                # Just in case the release date can also be missing, check it
+                # doesn't look like a format either.
+                if re.match(r"(?:\d{1,2} \w{3} \d{4})|(?:CD|Vinyl)", artist):
+                    self.logger.warning("Item missing artist; skipping")
+                    continue
+                cd["artist"] = artist
                 # 2 = release date
                 # 3 = type (CD)
                 # 4 = availability, but doesn't exist if not in stock

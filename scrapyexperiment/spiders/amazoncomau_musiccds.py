@@ -49,7 +49,7 @@ class AmazonAUMusicCDsSpider(scrapy.Spider):
         query = parse_qs(url.query, keep_blank_values=True)
 
         # Request each page
-        for page in range(2, last_page):
+        for page in range(2, last_page + 1):
             query["page"] = page
             url = url._replace(query=urlencode(query, doseq=True))
             yield response.follow(url.geturl(), callback=self.parse)

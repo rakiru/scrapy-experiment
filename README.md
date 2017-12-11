@@ -48,16 +48,8 @@ biggest price differences.
 * Make scrapers more parallel
     * Sanity.com.au gives links to the following 4 pages on every 5th
       page, plus a link to the next set of 5 - schedule all 5 at once
-    * Amazon only links to the next page, but the page is a simple GET
-      parameter, and we're told how many pages there are total, so we
-      could schedule a bunch at once, perhaps even all of them as soon
-      as we get the first response?
-    * AtlantisMusic is similar to Amazon.
-    * Fix Sanity scraper - artist isn't always there, and there's no way
-      to distinguish it from the other fields, like release date. Might
-      just have to regex it and check if it looks datey.
-    * Change the AtlantisMusic one to only look at New CDs - I didn't do
-      that before because then we exclude singles, but we're getting a
-      lot of duplicates with "Used CD" in the title. The alternative it
-      to just filter them out in the spider itself based on the title.
+    * Fix Sanity scraper to only filter by CDs. The filter fields appear
+      to be ignored without the rest of the form also submitted, so do a
+      GET on the page first, then submit the returned form with those
+      changes.
 

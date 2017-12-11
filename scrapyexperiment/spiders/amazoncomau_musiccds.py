@@ -1,4 +1,6 @@
 # coding=utf-8
+from urllib.parse import urlparse, parse_qs, urlencode
+
 import scrapy
 
 from scrapyexperiment.items import MusicCDItem
@@ -7,7 +9,8 @@ from scrapyexperiment.items import MusicCDItem
 class AmazonAUMusicCDsSpider(scrapy.Spider):
     name = "amazonau-musiccds"
     allowed_domains = ["amazon.com.au"]
-    start_urls = [
+
+    def start_requests(self):
         # rh                                      - search options
         #   n:4852330051                          - CDs & Vinyl
         #   p_n_binding_browse-bin:5260922051     - CD filter
@@ -15,14 +18,44 @@ class AmazonAUMusicCDsSpider(scrapy.Spider):
         #   p_n_free_shipping_eligible:5363790051 - Free shipping
         # lo=popular                              - Grid layout (60 per page)
         #                                           but it doesn't list artist
-        (
+        url = (
             "https://www.amazon.com.au/gp/search/"
             "?rh=n%3A4852330051"
             "%2Cp_n_binding_browse-bin%3A5260922051"
             "%2Cp_n_availability%3A4910512051"
             "%2Cp_n_free_shipping_eligible%3A5363790051"
-        ),
-    ]
+        )
+        yield scrapy.Request(
+            url,
+            callback=self._parse_initial,
+            dont_filter=True,
+        )
+
+    def _parse_initial(self, response):
+        # Schedule the requests for all the pages up front to allow scrapy to
+        # parallelise them. Otherwise, each page would depend on the previous
+        # one's "Next page" link, which means only one request can be happening
+        # at once. This would probably be acceptable if we were also making
+        # requests for each item, but we're just pulling the data from the
+        # listing.
+
+        # Find the last page
+        last_page = response.css("#pagn .pagnDisabled::text").extract()[0]
+        last_page = int(last_page)
+
+        # Get the URL for the next page to use as a basis for all pages
+        next_page_url = response.css("#pagnNextLink::attr(href)").extract()[0]
+        url = urlparse(next_page_url)
+        query = parse_qs(url.query, keep_blank_values=True)
+
+        # Request each page
+        for page in range(2, last_page):
+            query["page"] = page
+            url = url._replace(query=urlencode(query, doseq=True))
+            yield response.follow(url.geturl(), callback=self.parse)
+
+        # Call the regular parse method to actually scrape this page's data
+        yield from self.parse(response)
 
     def parse(self, response):
         for result in response.css(".s-result-list > li"):
@@ -51,7 +84,3 @@ class AmazonAUMusicCDsSpider(scrapy.Spider):
                 self.logger.error("Error parsing item: %s", result)
                 continue
             yield cd
-
-        # Go to the next page, if it exists
-        for link in response.css("#pagnNextLink"):
-            yield response.follow(link)

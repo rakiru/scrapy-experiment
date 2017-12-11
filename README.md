@@ -12,6 +12,7 @@ biggest price differences.
 * Amazon.com.au scraper
 * Sanity.com.au scraper
 * AtlantisMusic.com.au scraper
+* Randomised User-Agent middleware
 
 
 ## Requirements
@@ -48,8 +49,8 @@ biggest price differences.
 * Make scrapers more parallel
     * Sanity.com.au gives links to the following 4 pages on every 5th
       page, plus a link to the next set of 5 - schedule all 5 at once
-    * Fix Sanity scraper to only filter by CDs. The filter fields appear
-      to be ignored without the rest of the form also submitted, so do a
-      GET on the page first, then submit the returned form with those
-      changes.
+    * Proper feed exporter setup. This is needed for the crawl script
+      that runs all spiders at once. I have a rough idea how to do this,
+      but I'd like to make sure I do it the standard way, so it's not
+      implemented yet.
 

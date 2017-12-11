@@ -16,7 +16,7 @@ biggest price differences.
 
 ## Requirements
 
-* Python 3.6 (3.3+ should work, but untested)
+* Python 3.6 (3.5+ should work, but untested)
 
 
 ## How to
